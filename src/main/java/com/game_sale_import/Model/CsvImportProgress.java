@@ -18,7 +18,7 @@ public class CsvImportProgress {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @Column(name = "file_name", length = 255, nullable = false)
+    @Column(name = "file_name", length = 100, nullable = false)
     private String fileName;
 
     @Lob

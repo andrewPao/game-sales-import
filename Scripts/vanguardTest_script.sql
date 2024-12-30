@@ -1,6 +1,6 @@
 CREATE TABLE game_sales_db.csv_import_progress (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    file_name VARCHAR(255),
+    file_name VARCHAR(100),
     file_data LONGBLOB,
     total_records INT,
     start_time DATETIME,
@@ -9,7 +9,7 @@ CREATE TABLE game_sales_db.csv_import_progress (
     error_log LONGTEXT
 );
 
-CREATE TABLE game_sales (
+CREATE TABLE game_sales_db.game_sales (
     id INT NOT NULL,
     csv_id INT NOT NULL,
     game_no INT,
@@ -26,7 +26,7 @@ CREATE TABLE game_sales (
 CREATE TABLE game_sales_db.sale_summary (
     id INT AUTO_INCREMENT PRIMARY KEY,
 	game_no INT NOT NULL,
-	game_name VARCHAR(255) NOT NULL,
+	game_name VARCHAR(20) NOT NULL,
     date_of_sale DATETIME NOT NULL,
     total_no_of_game_sold INT NOT NULL,
     sale_price DECIMAL(10, 2) NOT NULL,
