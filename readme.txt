@@ -1,5 +1,7 @@
 Readme.txt:
+Steps:
 Please clone the project from https://github.com/andrewPao/game-sales-import.git
+Switch/Check out to master branch
 
 Database:
 1) Establish a connection and create a new schema "game_sales_db" in mySQLWorkBench.
@@ -19,7 +21,7 @@ Task 1)
 Import end point:
 Post: http://localhost:8080/gameSalesApi/import
 Select Body tab -> Key : file , Value: -- navigate to game-sale-import/target/output , Description: file
-*Note: The csv file that contains 1,000,000 rows as per requirement locates at game-sale-import/target/output
+*Note: The csv file that contains 1,000,000 rows as per requirement locates at game-sale-import/target/output*
 
 
 getGameSales endpoint:
