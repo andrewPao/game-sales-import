@@ -3,11 +3,9 @@ package com.game_sale_import.Service;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 
 import javax.sql.DataSource;
@@ -22,26 +20,24 @@ import org.springframework.web.multipart.MultipartFile;
 import com.game_sale_import.Model.CsvImportProgress;
 import com.game_sale_import.Model.CsvImportResult;
 import com.game_sale_import.Model.GameSales;
+import com.game_sale_import.Model.GameSalesValidateObj;
 import com.game_sale_import.Repository.CsvImportProgressRepository;
 import com.game_sale_import.Updater.ProgressUpdater;
+import com.game_sale_import.Utils.FormatDate;
 import com.game_sale_import.Validator.GameSalesValidator;
 import com.opencsv.CSVReader;
 
 @Service
 public class CsvImportService {
-	
-	@Autowired
-	private DataSource dataSource;
 
 	@Autowired
 	private JdbcTemplate jdbcTemplate;
 
 	@Autowired
 	private CsvImportProgressRepository progressRepository;
-	
+
 	@Autowired
 	private SalesSummaryService salesSummaryService;
-	
 
 	private static final String sql = "INSERT INTO game_sales (id, game_no, game_name, game_code, type, cost_price, tax, sale_price, date_of_sale, csv_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
@@ -55,16 +51,30 @@ public class CsvImportService {
 		if (!gameSalesList.isEmpty()) {
 			try {
 
-				batchInsertGameSales(gameSalesList);
+				batchInsertGameSales(progress, gameSalesList);
 				ProgressUpdater.updateProgress(progress, "COMPLETED", gameSalesList.size(), null, progressRepository);
 
-				return new CsvImportResult("COMPLETED", gameSalesList.size());
+				// Aggregation
+				long startTime2 = System.currentTimeMillis();
+				System.out.println("StartTime 2: " + startTime2);
+
+				salesSummaryService.aggregateAndSaveGameSales(gameSalesList);
+
+				long endTime2 = System.currentTimeMillis();
+				System.out.println("endTime 2: " + endTime2);
+				System.out.println("Aggregation: " + (endTime2 - startTime2) + "milliseconds");
 
 			} catch (DataAccessException e) {
 				ProgressUpdater.updateProgress(progress, "SYSTEM_ERROR", 0, List.of("System error: " + e.getMessage()),
 						progressRepository);
-				return new CsvImportResult("System error please contact support", 0);
 			}
+
+			if (progress.getStatus().equals("COMPLETED")) {
+				return new CsvImportResult("COMPLETED", gameSalesList.size());
+			} else {
+				return new CsvImportResult("APPLICATION UPDATE IN PROGRESS PLEASE TRY AGAIN LATER", 0);
+			}
+
 		} else {
 
 			return new CsvImportResult("VALIDATION_ERROR", 0);
@@ -78,6 +88,7 @@ public class CsvImportService {
 
 		List<GameSales> gameSalesList = new ArrayList<>();
 		List<String> validationErrors = new ArrayList<>();
+		HashSet<Integer> keys = new HashSet<>();
 		boolean hasValidationErrors = false;
 
 		try (BufferedReader reader = new BufferedReader(new InputStreamReader(file.getInputStream()));
@@ -87,24 +98,32 @@ public class CsvImportService {
 
 			while ((nextLine = csvReader.readNext()) != null) {
 
-				GameSales sale = new GameSales(nextLine[0], // id
-						nextLine[1], // gameNo
-						nextLine[2], // gameName
-						nextLine[3], // gameCode
-						nextLine[4], // type
-						nextLine[5], // costPrice
-						nextLine[6], // tax
-						nextLine[7], // salePrice
-						nextLine[8], // dateOfSale
-						progress.getId() // csvId from progress
+				GameSalesValidateObj validateObj = new GameSalesValidateObj(nextLine[0], 
+						nextLine[1], 
+						nextLine[2], 
+						nextLine[3], 
+						nextLine[4],
+						nextLine[5],
+						nextLine[6],
+						nextLine[7],
+						nextLine[8],
+						progress.getId()
 				);
 
-				List<String> errors = GameSalesValidator.validate(sale);
+				List<String> errors = GameSalesValidator.validate(validateObj, keys);
 
 				if (!errors.isEmpty()) {
-					hasValidationErrors = true; // Flag that an error has occurred
+					hasValidationErrors = true;
 					validationErrors.add("Row " + nextLine[0] + ": " + String.join(", ", errors));
+
 				} else if (!hasValidationErrors) {
+					GameSales sale = new GameSales(Integer.parseInt(validateObj.getId()),
+							Integer.parseInt(validateObj.getGameNo()), validateObj.getGameName(),
+							validateObj.getGameCode(), Integer.parseInt(validateObj.getType()),
+							Double.parseDouble(validateObj.getCostPrice()), Integer.parseInt(validateObj.getTax()),
+							Double.parseDouble(validateObj.getSalePrice()),
+							FormatDate.localDateFormatDDMMYYYY(validateObj.getDateOfSale()), validateObj.getCsvId());
+
 					gameSalesList.add(sale);
 				}
 
@@ -129,35 +148,27 @@ public class CsvImportService {
 
 	}
 
-	private void batchInsertGameSales(List<GameSales> gameSalesList) {
+	public void batchInsertGameSales(CsvImportProgress progress, List<GameSales> gameSalesList) {
+		// Batch Import Process
 		long startTime = System.currentTimeMillis();
 		System.out.println("StartTime: " + startTime);
 
 		jdbcTemplate.batchUpdate(sql, gameSalesList, 1000000, (ps, record) -> {
-			ps.setString(1, record.getId());
-			ps.setString(2, record.getGameNo());
+			ps.setInt(1, record.getId());
+			ps.setInt(2, record.getGameNo());
 			ps.setString(3, record.getGameName());
 			ps.setString(4, record.getGameCode());
-			ps.setString(5, record.getType());
-			ps.setString(6, record.getCostPrice());
-			ps.setString(7, record.getTax());
-			ps.setString(8, record.getSalePrice());
-			ps.setString(9, record.getDateOfSale());
+			ps.setInt(5, record.getType());
+			ps.setDouble(6, record.getCostPrice());
+			ps.setInt(7, record.getTax());
+			ps.setDouble(8, record.getSalePrice());
+			ps.setObject(9, record.getDateOfSale());
 			ps.setInt(10, record.getCsvId());
 		});
-		
+
 		long endTime = System.currentTimeMillis();
 		System.out.println("endTime: " + endTime);
 		System.out.println("Batch Import ended total time taken: " + (endTime - startTime) / 1000 + "seconds");
-		
-		long startTime2 = System.currentTimeMillis();
-		System.out.println("StartTime 2: " + startTime2);
-		
-		salesSummaryService.aggregateAndSaveGameSales(gameSalesList);
-		
-		long endTime2 = System.currentTimeMillis();
-		System.out.println("endTime 2: " + endTime2);
-		System.out.println("Aggregation: " + (startTime2 - endTime2) + "milliseconds");
 
 	}
 
@@ -170,43 +181,4 @@ public class CsvImportService {
 		return progressRepository.save(progress);
 	}
 
-	public void clearTmpTable() {
-		String sql = "TRUNCATE TABLE game_sales_db.game_sales";
-		try (Connection connection = dataSource.getConnection();
-				PreparedStatement ps = connection.prepareStatement(sql)) {
-			ps.execute();
-			System.out.println("Temporary table cleared using TRUNCATE.");
-		} catch (SQLException e) {
-			e.printStackTrace();
-		}
-	}
-
-	// need to handle this
-//	private void handleInsertionError(CsvImportProgress progress, DataAccessException e) throws Exception {
-//	    ProgressUpdater.updateProgress(progress, "ERROR", 0, List.of("Failed to import: " + e.getMessage()), progressRepository);
-//	    throw new Exception("Validation failed. Errors logged in CsvImportProgress.");
-//	}
-
-//	public String callValidationStoreProc(int fileId) {
-//		String status = "";
-//
-//		try (Connection connection = dataSource.getConnection();
-//				CallableStatement callableStatement = connection
-//						.prepareCall("{call game_sales_db.importCsvValidation(?,?)}");) {
-//
-//			callableStatement.setInt(1, fileId);
-//			callableStatement.registerOutParameter(2, Types.VARCHAR);
-//			callableStatement.execute();
-//
-//			status = callableStatement.getString(2);
-//			System.out.println("status: " + status);
-//
-//		} catch (SQLException e) {
-//			e.printStackTrace();
-//		}
-//
-//		return status;
-//
-//	}
-//
 }

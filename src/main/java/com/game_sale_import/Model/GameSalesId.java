@@ -5,16 +5,16 @@ import java.util.Objects;
 
 public class GameSalesId implements Serializable {
 	
-	private String id;       
+	private int id;       
     private int csvId;
 
     public GameSalesId() {}
 
-	public String getId() {
+	public int getId() {
 		return id;
 	}
 
-	public void setId(String id) {
+	public void setId(int id) {
 		this.id = id;
 	}
 

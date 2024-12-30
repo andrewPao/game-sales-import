@@ -1,6 +1,7 @@
 package com.game_sale_import.Model;
 
 import java.io.Serializable;
+import java.time.LocalDate;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -12,47 +13,48 @@ import jakarta.persistence.Table;
 @Table(name = "game_sales")
 @IdClass(GameSalesId.class)
 public class GameSales implements Serializable {
-	
+
 	private static final long serialVersionUID = 1L;
 
 	@Id
 	@Column(name = "id", nullable = false)
-	private String id;
-
-	@Id
-	@Column(name = "csv_id", nullable = false)
-	private Integer csvId;
+	private int id;
 
 	@Column(name = "game_no")
-	private String gameNo;
+	private int gameNo;
 
-	@Column(name = "game_name")
+	@Column(name = "game_name", length = 20)
 	private String gameName;
 
-	@Column(name = "game_code")
+	@Column(name = "game_code", length = 5)
 	private String gameCode;
 
 	@Column(name = "type")
-	private String type;
+	private int type;
 
 	@Column(name = "cost_price")
-	private String costPrice;
+	private double costPrice;
 
 	@Column(name = "tax")
-	private String tax;
+	private int tax;
 
 	@Column(name = "sale_price")
-	private String salePrice;
+	private double salePrice;
 
 	@Column(name = "date_of_sale")
-	private String dateOfSale;
+	private LocalDate dateOfSale;
+
+	@Id
+	@Column(name = "csv_id")
+	private int csvId;
 
 	public GameSales() {
 
 	}
 
-	public GameSales(String id, String gameNo, String gameName, String gameCode, String type, String costPrice,
-			String tax, String salePrice, String dateOfSale, Integer csvId) {
+	public GameSales(int id, int gameNo, String gameName, String gameCode, int type, double costPrice, int tax,
+			double salePrice, LocalDate dateOfSale, int csvId) {
+
 		this.id = id;
 		this.gameNo = gameNo;
 		this.gameName = gameName;
@@ -63,21 +65,22 @@ public class GameSales implements Serializable {
 		this.salePrice = salePrice;
 		this.dateOfSale = dateOfSale;
 		this.csvId = csvId;
+
 	}
 
-	public String getId() {
+	public int getId() {
 		return id;
 	}
 
-	public void setId(String id) {
+	public void setId(int id) {
 		this.id = id;
 	}
 
-	public String getGameNo() {
+	public int getGameNo() {
 		return gameNo;
 	}
 
-	public void setGameNo(String gameNo) {
+	public void setGameNo(int gameNo) {
 		this.gameNo = gameNo;
 	}
 
@@ -97,51 +100,51 @@ public class GameSales implements Serializable {
 		this.gameCode = gameCode;
 	}
 
-	public String getType() {
+	public int getType() {
 		return type;
 	}
 
-	public void setType(String type) {
+	public void setType(int type) {
 		this.type = type;
 	}
 
-	public String getCostPrice() {
+	public double getCostPrice() {
 		return costPrice;
 	}
 
-	public void setCostPrice(String costPrice) {
+	public void setCostPrice(double costPrice) {
 		this.costPrice = costPrice;
 	}
 
-	public String getTax() {
+	public int getTax() {
 		return tax;
 	}
 
-	public void setTax(String tax) {
+	public void setTax(int tax) {
 		this.tax = tax;
 	}
 
-	public String getSalePrice() {
+	public double getSalePrice() {
 		return salePrice;
 	}
 
-	public void setSalePrice(String salePrice) {
+	public void setSalePrice(double salePrice) {
 		this.salePrice = salePrice;
 	}
 
-	public String getDateOfSale() {
+	public LocalDate getDateOfSale() {
 		return dateOfSale;
 	}
 
-	public void setDateOfSale(String dateOfSale) {
+	public void setDateOfSale(LocalDate dateOfSale) {
 		this.dateOfSale = dateOfSale;
 	}
 
-	public Integer getCsvId() {
+	public int getCsvId() {
 		return csvId;
 	}
 
-	public void setCsvId(Integer csvId) {
+	public void setCsvId(int csvId) {
 		this.csvId = csvId;
 	}
 

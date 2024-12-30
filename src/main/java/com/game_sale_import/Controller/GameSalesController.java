@@ -6,17 +6,19 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoUnit;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -28,9 +30,10 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.game_sale_import.Model.CsvImportResult;
 import com.game_sale_import.Model.GameSales;
-import com.game_sale_import.Repository.CsvImportProgressRepository;
+import com.game_sale_import.Model.SaleSummary;
 import com.game_sale_import.Service.CsvImportService;
 import com.game_sale_import.Service.GameSalesService;
+import com.game_sale_import.Service.SalesSummaryService;
 
 @RestController
 @RequestMapping("/gameSalesApi")
@@ -38,9 +41,15 @@ public class GameSalesController {
 
 	@Autowired
 	private CsvImportService importService;
-
+	
 	@Autowired
 	private GameSalesService gameSalesService;
+
+	@Autowired
+	private SalesSummaryService salesSummaryService;
+	
+	private static final Logger logger = LoggerFactory.getLogger(GameSalesController.class);
+	
 
 	// Q1
 	@PostMapping("/import")
@@ -48,46 +57,116 @@ public class GameSalesController {
 		try {
 	
 			CsvImportResult csvImportResponse = importService.importCsvAndInsert(file);
-			
 
-			return ResponseEntity.status(HttpStatus.MULTI_STATUS)
+			return ResponseEntity.status(HttpStatus.OK)
 					.body("Import Status : " + csvImportResponse.getStatus() + " Total rows imported: " + csvImportResponse.getTotalRecords());
 		} catch (Exception e) {
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error: " + e.getMessage());
+			logger.error("Internal error occurred: {}", e.getMessage(), e);
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("APPLICATION UPDATE IN PROGRESS PLEASE TRY AGAIN LATER");
 		}
 	}
 	
-
-	// Qn3
+	// Qn3 
 	@GetMapping("/getGameSales")
-	public ResponseEntity<Page<GameSales>> getGameSales(
-			@RequestParam(value = "fromDate", required = false) String fromDate,
-			@RequestParam(value = "toDate", required = false) String toDate,
-			@RequestParam(value = "price", required = false) BigDecimal price,
-			@RequestParam(value = "lessThan", required = false) Boolean lessThan,
-			@RequestParam(value = "page", defaultValue = "0") int page,
-			@RequestParam(value = "size", defaultValue = "100") int size) {
-		//Improvement plan, store in a global variable or cache the full list. Then stream lamda
+	public ResponseEntity<Object> getGameSales(
+	        @RequestParam(value = "fromDate", required = false) String fromDate,
+	        @RequestParam(value = "toDate", required = false) String toDate,
+	        @RequestParam(value = "price", required = false) BigDecimal price,
+	        @RequestParam(value = "lessThan", required = false) Boolean lessThan,
+	        @RequestParam(value = "page", defaultValue = "0") int page,
+	        @RequestParam(value = "size", defaultValue = "100") int size) {
+	    try {
+	     
+	        LocalDate startDate = null;
+	        LocalDate endDate = null;
 
-		Pageable pageable = PageRequest.of(page, size);
-		Page<GameSales> result = null;
-		
-		long startTime = System.currentTimeMillis();
-		System.out.println("StartTime: " + startTime);
+	        if (fromDate != null) {
+	            startDate = LocalDate.parse(fromDate); 
+	        }
+	        if (toDate != null) {
+	            endDate = LocalDate.parse(toDate);
+	        }
 
-		if (fromDate != null && toDate != null) {
-			result = gameSalesService.getGameSalesByDateRange(fromDate, toDate, pageable);
-		} else if (price != null && lessThan != null) {
-			result = gameSalesService.getGameSalesByPriceCondition(price, lessThan, pageable);
-		} else {
-			result = gameSalesService.getGameSales(pageable);
-		}
-		
-		long endTime = System.currentTimeMillis();
-		System.out.println("endTime: " + endTime);
-		System.out.println("Retrieval Time: " + (endTime-startTime) + " milliseconds");
+	        if (startDate != null && endDate != null && startDate.isAfter(endDate)) {
+	            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+	                    .body(Map.of(
+	                            "errorCode", "INVALID_DATE_RANGE",
+	                            "message", "The 'fromDate' must be before 'toDate'."
+	                    ));
+	        }
 
-		return ResponseEntity.ok(result);
+	        long startTime = System.currentTimeMillis();
+	        System.out.println("StartTime: " + startTime);
+
+	        Page<GameSales> result = gameSalesService.retrieveGameSales(fromDate, toDate, price, lessThan, page, size);
+
+	        long endTime = System.currentTimeMillis();
+	        System.out.println("endTime: " + endTime);
+	        System.out.println("Retrieval Time getGameSales: " + (endTime - startTime) + " milliseconds");
+
+	        return ResponseEntity.ok(result);
+
+	    } catch (DateTimeParseException e) {
+	       
+	        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+	                .body(Map.of(
+	                        "errorCode", "INVALID_DATE_FORMAT",
+	                        "message", "Invalid date format. Please use the format 'YYYY-MM-DD'."
+	                ));
+	    } catch (Exception e) {
+	    	logger.error("Internal error occurred: {}", e.getMessage(), e);
+	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+	                .body(Map.of(
+	                        "errorCode", "SYSTEM_ERROR",
+	                        "message", "APPLICATION UPDATE IN PROGRESS PLEASE TRY AGAIN LATER"
+	                ));
+	    }
+	}
+	
+	// Qn4
+	@GetMapping("/getTotalSales")
+	public ResponseEntity<Object> getTotalSales(
+	        @RequestParam String fromDate,
+	        @RequestParam(required = false) String toDate,
+	        @RequestParam(required = false) Integer gameNo) {
+	    try {
+	        
+	        LocalDate startDate = LocalDate.parse(fromDate);
+	        LocalDate endDate = toDate == null || toDate.isEmpty() ? startDate : LocalDate.parse(toDate);
+
+	        if (startDate.isAfter(endDate)) {
+	            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+	                    .body(Map.of(
+	                            "errorCode", "INVALID_DATE_RANGE",
+	                            "message", "'fromDate' must not be after 'toDate'."
+	                    ));
+	        }
+
+	        long startTime = System.currentTimeMillis();
+	        System.out.println("StartTime: " + startTime);
+
+	        List<SaleSummary> saleSummaries = salesSummaryService.getSaleSummary(startDate, endDate, gameNo);
+
+	        long endTime = System.currentTimeMillis();
+	        System.out.println("endTime: " + endTime);
+	        System.out.println("Retrieval Time getTotalSales: " + (endTime - startTime) + " milliseconds");
+
+	        return ResponseEntity.ok(saleSummaries);
+
+	    } catch (DateTimeParseException e) {
+	        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+	                .body(Map.of(
+	                        "errorCode", "INVALID_DATE_FORMAT",
+	                        "message", "Invalid date format. Please use the format 'YYYY-MM-DD'."
+	                ));
+	    } catch (Exception e) {
+	        logger.error("Internal error occurred: {}", e.getMessage(), e);
+	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+	                .body(Map.of(
+	                        "errorCode", "SYSTEM_ERROR",
+	                        "message", "An unexpected error occurred while retrieving sales data."
+	                ));
+	    }
 	}
 	
 	@PostMapping("/generateCsvFile")

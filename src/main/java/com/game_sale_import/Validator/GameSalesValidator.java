@@ -6,65 +6,61 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
-import com.game_sale_import.Model.GameSales;
+import com.game_sale_import.Model.GameSalesValidateObj;
 
 public class GameSalesValidator {
 
-	public static List<String> validate(GameSales sale) {
+	public static List<String> validate(GameSalesValidateObj validateObj, HashSet<Integer> keys) {
 
 		List<String> errors = new ArrayList<>();
 
-		// Validate ID
-		if (sale.getId() == null || !sale.getId().matches("^[0-9]+$")) {
+		if (validateObj.getId() == null || !validateObj.getId().matches("^[0-9]+$")) {
 			errors.add("Invalid ID format.");
+		}else{
+			int id = Integer.parseInt(validateObj.getId());
+			if (!keys.add(id)) {
+				errors.add("Duplicate Id");
+			}
 		}
-
-		// Validate Game Number
-		if (sale.getGameNo() == null || !sale.getGameNo().matches("^[0-9]+$")) {
+		
+		if (validateObj.getGameNo() == null || !validateObj.getGameNo().matches("^[0-9]+$")) {
 			errors.add("Invalid Game Number format.");
 		} else {
-			int gameNo = Integer.parseInt(sale.getGameNo());
+			int gameNo = Integer.parseInt(validateObj.getGameNo());
 			if (gameNo < 1 || gameNo > 100) {
 				errors.add("Game Number must be between 1 and 100.");
 			}
 		}
 
-		// Validate Game Name
-		if (sale.getGameName() != null && sale.getGameName().length() > 20) {
+		if (validateObj.getGameName() != null && validateObj.getGameName().length() > 20) {
 			errors.add("Game Name exceeded 20 characters.");
 		}
 
-		// Validate Game Code
-		if (sale.getGameCode() != null && sale.getGameCode().length() > 5) {
+		if (validateObj.getGameCode() != null && validateObj.getGameCode().length() > 5) {
 			errors.add("Game Code exceeded 5 characters.");
 		}
 
-		// Validate Type
-		if (sale.getType() == null || (!sale.getType().equals("1") && !sale.getType().equals("2"))) {
+		if (validateObj.getType() == null
+				|| (!validateObj.getType().equals("1") && !validateObj.getType().equals("2"))) {
 			errors.add("Invalid Game Type.");
 		}
 
-		// Validate Cost Price
-		if (sale.getCostPrice() == null || !sale.getCostPrice().matches("^[0-9]+(\\.[0-9]+)?$")
-				|| new BigDecimal(sale.getCostPrice()).compareTo(BigDecimal.valueOf(100)) > 0) {
+		if (validateObj.getCostPrice() == null || !validateObj.getCostPrice().matches("^[0-9]+(\\.[0-9]+)?$")
+				|| new BigDecimal(validateObj.getCostPrice()).compareTo(BigDecimal.valueOf(100)) > 0) {
 			errors.add("Invalid or too high Cost Price.");
 		}
 
-		// Validate Tax
-		if (sale.getTax() == null || !sale.getTax().matches("^[0-9]+$")) {
+		if (validateObj.getTax() == null || !validateObj.getTax().matches("^[0-9]+$")) {
 			errors.add("Invalid Tax format.");
 		}
 
-		// Validate Sale Price
-		if (sale.getSalePrice() == null || !sale.getSalePrice().matches("^[0-9]+(\\.[0-9]+)?$")) {
+		if (validateObj.getSalePrice() == null || !validateObj.getSalePrice().matches("^[0-9]+(\\.[0-9]+)?$")) {
 			errors.add("Invalid Sale Price format.");
 		}
 
-		// Validate Date of Sale
 		try {
-			LocalDate.parse(sale.getDateOfSale(), DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+			LocalDate.parse(validateObj.getDateOfSale(), DateTimeFormatter.ofPattern("dd/MM/yyyy"));
 		} catch (Exception e) {
 			errors.add("Invalid Date format. Expected DD/MM/YYYY.");
 		}

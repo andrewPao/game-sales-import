@@ -18,10 +18,14 @@ public class SaleSummary {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	@Column(name = "id", nullable = false)
 	private Long id;
 
 	@Column(name = "game_no", nullable = false)
 	private Integer gameNo;
+	
+	@Column(name = "game_name", nullable = false)
+	private String gameName;
 
 	@Column(name = "date_of_sale", nullable = false)
 	private LocalDate dateOfSale;
@@ -41,10 +45,11 @@ public class SaleSummary {
 		this.dateOfSale = dateOfSale;
 	}
 
-	public SaleSummary(Long id, Integer gameNo, LocalDate dateOfSale, Integer totalNoOfGameSold,
+	public SaleSummary(Long id, Integer gameNo, String gameName,  LocalDate dateOfSale, Integer totalNoOfGameSold,
 			BigDecimal sale_price) {
 		this.id = id;
 		this.gameNo = gameNo;
+		this.gameName = gameName;
 		this.dateOfSale = dateOfSale;
 		this.totalNoOfGameSold = totalNoOfGameSold;
 		this.sale_price = sale_price;
@@ -64,6 +69,14 @@ public class SaleSummary {
 
 	public void setGameNo(Integer gameNo) {
 		this.gameNo = gameNo;
+	}
+
+	public String getGameName() {
+		return gameName;
+	}
+
+	public void setGameName(String gameName) {
+		this.gameName = gameName;
 	}
 
 	public LocalDate getDateOfSale() {
