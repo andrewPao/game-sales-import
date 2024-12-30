@@ -5,12 +5,12 @@ Switch/Check out to master branch
 
 Database:
 1) Establish a connection and create a new schema "game_sales_db" in mySQLWorkBench.
-2) In application.properties file, user may required to edit the username and password according to their own local db configuration.
-3) Open "Script" folder and execute these queries from "vanguardTest_script.sql" into the new created schema "game_sales_db" from mySQL workbench.
+2) Open "Script" folder and execute these queries from "vanguardTest_script.sql" into the new created schema "game_sales_db" from mySQL workbench.
 
 Project: 
-4) import as existing maven project into IDE.
-5) run GameSaleImportApplication.java as Java application.
+3) Import as existing maven project into IDE.
+4) In application.properties file, user may required to edit the username and password according to their own local db configuration.
+5) Under com.game_sale_import, right click on GameSaleImportApplication.java and run as Java application.
 
 Postman:
  
