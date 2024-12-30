@@ -23,6 +23,17 @@ Post: http://localhost:8080/gameSalesApi/import
 Select Body tab -> Key : file , Value: -- navigate to game-sale-import/target/output , Description: file
 *Note: The csv file that contains 1,000,000 rows as per requirement locates at game-sale-import/target/output*
 
+Validation and verification steps:
+There is an file named "Excel_For_Validation" inside it contains an excel named "Game_Sale(Violate Validation).csv
+It can be use to import.
+
+Expected output: Import Status : VALIDATION_ERROR Total rows imported: 0
+Navigate to mysql run this query 
+SELECT * FROM game_sales_db.csv_import_progress order by id desc;
+
+Note: If the file contains error, the error_log column will not be null. Under error_log column, right click "blob" -> Open Value in Editor.
+
+For task 2 In-depth design can only be further elaborate during interview. "vanguardTest_script.sql" contains the required tables for this test.
 
 getGameSales endpoint:
 Task 3 part 1) A list of game sales
@@ -51,4 +62,6 @@ http://localhost:8080/gameSalesApi/getTotalSales?fromDate=2024-04-01&toDate=2024
 Task 5:
 Screenshot_ExecutionTime:
 The screenshot of execution time for task 3,4 and 5 are stored in game-sale-import/Screenshot_ExecutionTime
+
+Thank you for taking the time to read and run my application for the test ;).
 
