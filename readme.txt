@@ -7,6 +7,11 @@ Database:
 1) Establish a connection and create a new schema "game_sales_db" in mySQLWorkBench.
 2) Open "Script" folder and execute these queries from "vanguardTest_script.sql" into the new created schema "game_sales_db" from mySQL workbench.
 
+Note:After execution of SET GLOBAL max_allowed_packet=268435456;
+Restart mysqlworkbench and run the below query 
+SHOW VARIABLES LIKE 'max_allowed_packet';
+To verify changes on that max_allowed_packet = 268435456
+
 Project: 
 3) Import as existing maven project into IDE.
 4) In application.properties file, user may required to edit the username and password according to their own local db configuration.

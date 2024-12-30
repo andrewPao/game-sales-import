@@ -34,3 +34,4 @@ CREATE TABLE game_sales_db.sale_summary (
 );
 
 SET GLOBAL max_allowed_packet=268435456;
+SHOW VARIABLES LIKE 'max_allowed_packet';
