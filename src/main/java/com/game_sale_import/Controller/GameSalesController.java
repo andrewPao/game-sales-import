@@ -198,7 +198,7 @@ public class GameSalesController {
 		}
 	}
 
-	public static void generateData(CSVPrinter csvPrinter, int numberOfRows) throws IOException {
+	private void generateData(CSVPrinter csvPrinter, int numberOfRows) throws IOException {
 		Random random = new Random();
 		DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
@@ -222,7 +222,7 @@ public class GameSalesController {
 
 	}
 
-	private static LocalDate generateRandomDate(Random random, LocalDate startDate, LocalDate endDate) {
+	private LocalDate generateRandomDate(Random random, LocalDate startDate, LocalDate endDate) {
 		long daysBetween = ChronoUnit.DAYS.between(startDate, endDate);
 		return startDate.plusDays(random.nextInt((int) daysBetween + 1));
 	}
